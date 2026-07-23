@@ -309,6 +309,14 @@ main.show{opacity:1}
 .butterfly{position:absolute;z-index:5;pointer-events:none;will-change:transform;filter:drop-shadow(0 3px 4px rgba(120,120,120,.22))}
 .butterfly .wing{transform-box:fill-box;transform-origin:right center;animation:flap .34s ease-in-out infinite alternate}
 .butterfly .wing.r{transform-origin:left center;animation-delay:.02s}
+/* 淋花水壺：花園右側，可拖動；提起時向左傾斜，由花灑頭持續滴水 */
+.can-wrap{position:absolute;z-index:5;cursor:grab;touch-action:none;will-change:left,top,transform;
+  transform-origin:72% 74%;transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+.can-wrap.lifted{transform:rotate(17deg);cursor:grabbing}
+.can-wrap svg{display:block;filter:drop-shadow(0 9px 13px rgba(110,140,110,.30))}
+.water-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.water-drop{position:absolute;width:6px;height:9px;border-radius:54% 54% 50% 50%/64% 64% 40% 40%;
+  background:linear-gradient(180deg,#cfeaf6,#9cc7dd);box-shadow:0 0 4px rgba(150,190,210,.55)}
 @keyframes flap{from{transform:rotateY(0deg)}to{transform:rotateY(62deg)}}
 @keyframes flit1{0%{transform:translate(0,0)}25%{transform:translate(120px,-30px)}50%{transform:translate(230px,10px)}75%{transform:translate(120px,44px)}100%{transform:translate(0,0)}}
 @keyframes flit2{0%{transform:translate(0,0)}30%{transform:translate(-140px,26px)}60%{transform:translate(-70px,-34px)}100%{transform:translate(0,0)}}
@@ -570,7 +578,7 @@ main.show{opacity:1}
   <div class="room-bg"></div>
   <button class="close" data-close>×</button>
   <h2 class="room-title">寧靜花園</h2>
-  <p class="room-desc">不用求助，只需照料。<br>㩒一下雲朵下場雨，或輕輕掃走落葉。</p>
+  <p class="room-desc">不用求助，只需照料。<br>提起右邊的水壺為每朵花澆水，或輕輕掃走落葉。</p>
   <div class="garden-stage" id="gardenStage"></div>
   <p class="garden-say" id="gardenSay"></p>
   <p class="garden-hint">花園會自己慢慢長大 —— 不催促，也不考核。</p>
@@ -1020,6 +1028,25 @@ function grassSVG(leftPct){
       <circle cx="-4.6" cy="-1.5" r="1.5" fill="#f4dce8"/><circle r="2" fill="#e7a9c4"/>
     </g></svg>`;
 }
+function wateringCanSVG(){
+  // 水壺：噴嘴（花灑頭）朝左，提起時向左傾斜由噴嘴滴水；canSpout 為不可見的出水點標記
+  return `<div class="can-wrap" id="canWrap">
+    <svg width="150" height="120" viewBox="0 0 170 130">
+      <defs><linearGradient id="canG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe0c6"/><stop offset="1" stop-color="#7fae8c"/></linearGradient></defs>
+      <path d="M74 78 C52 74 30 66 14 56 L10 62 C30 73 54 84 76 90 Z" fill="url(#canG)" stroke="#6f9c7c" stroke-width="1.6"/>
+      <g>
+        <ellipse cx="12" cy="59" rx="8" ry="10" fill="#a9d2ad" stroke="#6f9c7c" stroke-width="1.6"/>
+        <ellipse cx="12" cy="59" rx="4.5" ry="6.5" fill="#cde8d0"/>
+      </g>
+      <path d="M74 46 Q68 46 68 54 L72 106 Q73 118 88 118 L150 118 Q164 118 164 104 L166 58 Q166 46 152 46 Z" fill="url(#canG)" stroke="#6f9c7c" stroke-width="1.7"/>
+      <ellipse cx="113" cy="46" rx="43" ry="9" fill="#d4ead7" stroke="#6f9c7c" stroke-width="1.5"/>
+      <ellipse cx="113" cy="46" rx="34" ry="6" fill="#aecdb2"/>
+      <path d="M84 42 Q113 4 148 42" fill="none" stroke="#6f9c7c" stroke-width="5.5" stroke-linecap="round"/>
+      <path d="M88 58 Q86 84 94 108" stroke="#ffffff" stroke-opacity=".4" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle id="canSpout" cx="12" cy="67" r="2" fill="transparent"/>
+    </svg>
+  </div>`;
+}
 // 一朵雲：用 w/h 控制大小（保留 150×92 比例），位置與透明度由呼叫處決定；可點擊下雨
 function cloudSVG(w,h,style,op,idx){
   const g='cloudG'+idx;
@@ -1044,7 +1071,7 @@ function initGarden(){
     <div class="sun-glow"></div>
     <svg class="hills" viewBox="0 0 580 150" preserveAspectRatio="none"><path d="M0 150 Q90 64 190 104 T390 84 Q480 54 580 104 L580 150 Z" fill="#cdddd2"/><path d="M0 150 Q120 96 240 116 T520 96 Q560 90 580 114 L580 150 Z" fill="#bcd2c6" opacity=".82"/></svg>
     <div class="mist"></div>
-    <div class="rain-layer" id="rainLayer"></div>
+    <div class="water-layer" id="waterLayer"></div>
     ${plantSVG(22,'#e6a9c0','1')}
     ${plantSVG(50,'#f0cf94','2')}
     ${plantSVG(76,'#c3a9dd','3')}
@@ -1062,16 +1089,15 @@ function initGarden(){
       <ellipse cx="15" cy="11" rx="7" ry="3.6" fill="#f2f4ee" opacity=".7"/>
       <g fill="#9bbf8f" opacity=".8"><circle cx="28" cy="17" r="1.6"/><circle cx="30" cy="15" r="1.3"/></g>
     </svg>
-    ${cloudSVG(158,97,'left:12%;top:1%',1,1)}
-    ${cloudSVG(118,73,'left:46%;top:3.5%',.9,2)}
-    ${cloudSVG(96,59,'left:74%;top:1%',.8,3)}`;
+    ${wateringCanSVG()}`;
   for(let i=0;i<5;i++)addLeaf(s);
   addButterfly(s,'#e7b8cf','flit1',26,34,'b1');
   addButterfly(s,'#c8bce6','flit2',31,30,'b2');
   addButterfly(s,'#f0dca0','flit3',28,38,'b3');
   addMotes(s,8);
   addTwinkles(s,6);
-  $$('.cloud',s).forEach(c=>c.addEventListener('click',()=>rain(s)));
+  bindCan(s);
+  gardenSay('提起右邊的水壺，為每朵花澆水 —— 它會自己慢慢長大。');
 }
 // 落葉：形狀更自然（葉脈+葉柄），可選擇從上方飄降落地
 const LEAF_COLORS=['#cdb98f','#c9a86f','#d6c199','#bfa46a'];
@@ -1153,28 +1179,85 @@ function sweepLeaves(s){
   leaves.forEach((l,i)=>{setTimeout(()=>l.classList.add('blown'),i*55);setTimeout(()=>l.remove(),1500+i*55);});
   petalBurst(s,5);
   gardenSay('一陣風輕輕吹過，落葉被帶走了。<br>泥土鬆開了，才能再長出新芽。');
-  grow();
+  grow(s);
   setTimeout(()=>{if($$('.leaf',s).length<3)for(let i=0;i<2;i++)addLeaf(s,true);},1800);
 }
-function rain(s){
-  const layer=$('#rainLayer');
-  // 雨滴：散落在整個花園寬度，從雲的下方開始落下，長短與速度略有差異，更自然
-  for(let i=0;i<24;i++){const d=document.createElement('div');d.className='rain-drop';
-    d.style.left=(4+Math.random()*92)+'%';
-    d.style.top=(6+Math.random()*12)+'%';
-    d.style.height=(13+Math.random()*7)+'px';
-    d.style.animationDuration=(0.9+Math.random()*0.5)+'s';
-    d.style.animationDelay=(Math.random()*0.9)+'s';
-    d.addEventListener('animationend',()=>d.remove());
-    layer.appendChild(d);setTimeout(()=>d.remove(),2400);}
-  // 雨滴落地的漣漪水花：散布在地面範圍（花與草所在的高度）
-  for(let i=0;i<10;i++){setTimeout(()=>{const sp=document.createElement('div');sp.className='splash';
-    sp.style.left=(6+Math.random()*88)+'%';sp.style.bottom=(3+Math.random()*22)+'%';
-    layer.appendChild(sp);setTimeout(()=>sp.remove(),900);}, 420+Math.random()*900);}
-  gardenSay(['澆了水，它會記得你來過。','慢慢來，它會自己長大的。','你照料的樣子，很溫柔。'][Math.floor(Math.random()*3)]);
-  grow();
-  // 雨停後，葉與草上留下微閃的露珠
-  setTimeout(()=>dewDrops(s,7),700);
+/* ---- 淋花水壺：提起水壺向左傾斜，由花灑頭持續滴水；水滴擊中哪朵花底，哪朵才生長 ---- */
+let canActive=false,canW=0,canH=0,dripTimer=0,dragOff={dx:0,dy:0},canX=0,canY=0;
+const PLANT_TOL=36;
+function getSpout(stage){
+  const sp=document.getElementById('canSpout');if(!sp)return null;
+  const r=sp.getBoundingClientRect(),sr=stage.getBoundingClientRect();
+  return {x:r.left+r.width/2-sr.left,y:r.top+r.height/2-sr.top};
+}
+function plantUnder(stage,x){
+  let best=null,bestD=1e9;
+  $$('.plant',stage).forEach(p=>{
+    const r=p.getBoundingClientRect(),sr=stage.getBoundingClientRect();
+    const cx=r.left+r.width/2-sr.left,d=Math.abs(cx-x);
+    if(d<PLANT_TOL&&d<bestD){bestD=d;best=p;}
+  });
+  return best;
+}
+function splashAt(layer,x,y){
+  const sp=document.createElement('div');sp.className='splash';
+  sp.style.left=x+'px';sp.style.top=y+'px';
+  layer.appendChild(sp);setTimeout(()=>sp.remove(),900);
+}
+function spawnDrop(stage){
+  const tip=getSpout(stage);if(!tip)return;
+  const layer=document.getElementById('waterLayer');if(!layer)return;
+  const plant=plantUnder(stage,tip.x);
+  const sr=stage.getBoundingClientRect();
+  let landY=plant?(plant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
+  const drop=document.createElement('div');drop.className='water-drop';
+  drop.style.left=(tip.x-3)+'px';drop.style.top=(tip.y-4)+'px';
+  layer.appendChild(drop);
+  const dist=Math.max(20,landY-tip.y);
+  const a=drop.animate([
+    {transform:'translateY(0)',opacity:.9},
+    {transform:`translateY(${dist}px)`,opacity:.9},
+    {transform:`translateY(${dist}px) scaleY(.45)`,opacity:0}
+  ],{duration:Math.max(380,dist*1.0),easing:'cubic-bezier(.5,0,1,1)',fill:'forwards'});
+  a.onfinish=()=>{
+    splashAt(layer,tip.x,landY);
+    if(plant&&!plant.dataset.bloom)waterPlant(plant);
+    drop.remove();
+  };
+}
+function waterPlant(p){
+  let lv=+(p.dataset.level||0);lv=Math.min(lv+1,8);p.dataset.level=lv;
+  const sc=0.5+lv*0.07;
+  p.style.transition='transform 1.6s cubic-bezier(.2,.8,.2,1)';
+  p.style.transform=`translateX(-50%) scale(${sc})`;
+  if(lv>=5&&!p.dataset.bloom){const tag=p.id.replace('plant','');openPlant(tag);
+    gardenSay(['你為它澆了水，它慢慢長大了。','它接住了你的心意。','看，它回應你了。'][Math.floor(Math.random()*3)]);}
+}
+function bindCan(stage){
+  const can=document.getElementById('canWrap');if(!can)return;
+  canW=can.offsetWidth||150;canH=can.offsetHeight||120;
+  canX=stage.clientWidth-canW-16;canY=stage.clientHeight*0.6;
+  can.style.left=canX+'px';can.style.top=canY+'px';
+  const down=e=>{
+    canActive=true;can.classList.add('lifted');
+    const pr=e.touches?e.touches[0]:e,cr=can.getBoundingClientRect();
+    dragOff={dx:pr.clientX-cr.left,dy:pr.clientY-cr.top};
+    if(!dripTimer)dripTimer=setInterval(()=>{if(canActive)spawnDrop(stage);},150);
+    e.preventDefault();
+  };
+  const move=e=>{
+    if(!canActive)return;
+    const pr=e.touches?e.touches[0]:e,sr=stage.getBoundingClientRect();
+    let nx=pr.clientX-dragOff.dx-sr.left,ny=pr.clientY-dragOff.dy-sr.top;
+    nx=Math.max(0,Math.min(stage.clientWidth-canW,nx));
+    ny=Math.max(0,Math.min(stage.clientHeight-canH*0.5,ny));
+    canX=nx;canY=ny;can.style.left=nx+'px';can.style.top=ny+'px';
+    e.preventDefault();
+  };
+  const up=()=>{canActive=false;can.classList.remove('lifted');if(dripTimer){clearInterval(dripTimer);dripTimer=0;}};
+  can.addEventListener('pointerdown',down);
+  window.addEventListener('pointermove',move);
+  window.addEventListener('pointerup',up);
 }
 function openPlant(tag){
   const p=document.querySelector('#plant'+tag);
@@ -1182,14 +1265,10 @@ function openPlant(tag){
   const b=p.querySelector('.bloom');if(b)b.classList.add('open');
   const bud=p.querySelector('.bud');if(bud)bud.classList.add('open');
 }
-function grow(){
-  gardenGrow=Math.min(gardenGrow+1,8);
-  const sc=0.5+gardenGrow*0.07;
-  $$('.plant').forEach(p=>{p.style.transition='transform 1.6s cubic-bezier(.2,.8,.2,1)';p.style.transform=`translateX(-50%) scale(${sc})`;});
-  // 先長高（花蕾），到足夠高度才綻放：讓每朵都經歷「花蕾→開花」，不會一上來就直接開花
-  if(gardenGrow>=5)openPlant('1');
-  if(gardenGrow>=6)openPlant('2');
-  if(gardenGrow>=7)openPlant('3');
+function grow(s){
+  // 掃葉亦視為「為每朵花添一份生長」：與澆水同機制，逐朵各自累計，不會覆寫已澆水的高度
+  const stage=s||document.getElementById('gardenStage');
+  $$('.plant',stage).forEach(p=>waterPlant(p));
 }
 function gardenSay(t){const el=$('#gardenSay');el.classList.remove('show');setTimeout(()=>{el.innerHTML=t;el.classList.add('show');},200);}
 
