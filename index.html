@@ -397,14 +397,17 @@ main.show{opacity:1}
   background:radial-gradient(ellipse 82% 72% at 50% 44%,rgba(0,0,0,0) 52%,rgba(8,18,14,.55) 100%)}
 .ff-field{position:absolute;inset:0;z-index:2}
 .firefly{position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;will-change:transform,opacity;z-index:3;
-  background:radial-gradient(circle at 50% 46%,#fffdf3 0%,#fbedb0 24%,#efd877 47%,rgba(226,204,110,.30) 66%,rgba(226,204,110,0) 80%);
-  box-shadow:0 0 24px 8px rgba(247,231,150,.55),0 0 60px 22px rgba(247,231,150,.26);
-  animation:ffglow 3.6s ease-in-out infinite}
-.firefly::before{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;
-  background:#fffef5;box-shadow:0 0 12px 5px rgba(255,253,222,.95)}
-.firefly::after{content:"";position:absolute;left:35%;top:31%;width:5px;height:5px;border-radius:50%;
-  background:rgba(255,255,255,.9);filter:blur(.4px)}
-@keyframes ffglow{0%,100%{opacity:.85;filter:brightness(.92)}50%{opacity:1;filter:brightness(1.16)}}
+  background:radial-gradient(circle at 50% 48%,#fffdf5 0%,#fdf0bd 22%,#f3da7e 46%,rgba(237,214,120,.32) 66%,rgba(237,214,120,0) 82%);
+  box-shadow:0 0 26px 9px rgba(248,232,150,.5),0 0 70px 26px rgba(248,232,150,.22);
+  animation:ffglow 4s ease-in-out infinite}
+.firefly::before{content:"";position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;
+  background:radial-gradient(circle,rgba(250,236,160,.30) 0%,rgba(250,236,160,.11) 46%,rgba(250,236,160,0) 72%);
+  animation:ffhalo 4s ease-in-out infinite}
+.firefly::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,#ffffff 0%,#fffbe9 52%,rgba(255,250,220,.92) 100%);
+  box-shadow:0 0 14px 6px rgba(255,253,224,.9)}
+@keyframes ffglow{0%,100%{opacity:.9;filter:brightness(.95)}50%{opacity:1;filter:brightness(1.12)}}
+@keyframes ffhalo{0%,100%{transform:scale(.82);opacity:.55}50%{transform:scale(1.14);opacity:.92}}
 .ff-trail{position:absolute;left:0;top:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;pointer-events:none;z-index:2;
   background:radial-gradient(circle,#fbeea6 0%,rgba(243,224,140,.5) 45%,rgba(243,224,140,0) 72%);
   animation:fftrail 1.15s ease-out forwards}
@@ -778,16 +781,30 @@ let musicOn=false,musicStarted=false,musicGain,musicOsc=[];
 function initMusic(){
   ensureCtx();
   musicGain=actx.createGain();musicGain.gain.value=0;musicGain.connect(actx.destination);
-  const lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=880;lp.Q.value=0.5;lp.connect(musicGain);
-  const hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=110;hp.connect(lp);
+  // 療癒的空間感：輕柔回聲（低反饋、短延遲）
+  const delay=actx.createDelay(1.0);delay.delayTime.value=0.36;
+  const fb=actx.createGain();fb.gain.value=0.26;
+  const wet=actx.createGain();wet.gain.value=0.3;
+  delay.connect(fb);fb.connect(delay);delay.connect(wet);wet.connect(musicGain);
+  // 柔化的頻率塑形
+  const lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=780;lp.Q.value=0.4;
+  const hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=120;lp.connect(musicGain);lp.connect(delay);
+  // 呼吸般的緩慢起伏（振幅擺動，不動音高）——像平靜的潮息
+  const breath=actx.createGain();breath.gain.value=1;
+  const blfo=actx.createOscillator();blfo.frequency.value=0.07;
+  const blfoG=actx.createGain();blfoG.gain.value=0.12;
+  blfo.connect(blfoG);blfoG.connect(breath.gain);blfo.start();
+  hp.connect(breath);breath.connect(lp);
+  // 全體共用的極輕微合唱：整組一起慢慢漂移，和聲保持穩定（不再各走各的、不再「降調詭異」）
+  const chorus=actx.createOscillator();chorus.frequency.value=0.05;
+  const chorusG=actx.createGain();chorusG.gain.value=3; // ±3 音分，極輕
+  chorus.connect(chorusG);chorus.start();
   const types=['sine','sine','triangle','sine'];
   for(let i=0;i<4;i++){
     const o=actx.createOscillator();o.type=types[i];o.frequency.value=MOODS.hub[i];
-    const g=actx.createGain();g.gain.value=(i===3?0.09:0.15);
-    // 輕微失諧，讓和聲更溫潤
-    const d=actx.createOscillator();d.frequency.value=0.06+0.025*i;const dg=actx.createGain();dg.gain.value=2.4;
-    d.connect(dg);dg.connect(o.detune);
-    o.connect(g);g.connect(hp);o.start();d.start();
+    chorusG.connect(o.detune); // 共用同一個緩慢合唱，整組同步微移
+    const g=actx.createGain();g.gain.value=(i===3?0.085:0.14);
+    o.connect(g);g.connect(hp);o.start();
     musicOsc.push(o);
   }
   musicStarted=true;
