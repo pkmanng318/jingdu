@@ -232,7 +232,7 @@ main.show{opacity:1}
 .night-count{margin-top:20px;color:#cdbfa6;letter-spacing:.24em;font-size:13px}
 
 /* 花園 */
-.garden-stage{position:relative;width:min(580px,94vw);height:min(440px,60vh);margin:6px auto 0;
+.garden-stage{position:relative;width:min(740px,96vw);height:min(580px,72vh);margin:6px auto 0;
   border-radius:28px;overflow:hidden;box-shadow:0 20px 60px var(--shadow);background:#e3ecdf}
 .garden-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
   filter:saturate(.92) brightness(1.03);pointer-events:none}
@@ -289,6 +289,10 @@ main.show{opacity:1}
 @keyframes bloomaura{0%,100%{transform:scale(.92);opacity:.4}50%{transform:scale(1.12);opacity:.6}}
 .bloom{transform:scale(0);transform-box:fill-box;transform-origin:center;transition:transform 1.8s cubic-bezier(.2,.8,.2,1)}
 .bloom.open{transform:scale(1)}
+/* 未開的花蕾：生長期可見，開花時收縮淡出（像花苞綻開成花朵） */
+.bud{transform:scale(1);transform-box:fill-box;transform-origin:center bottom;
+  transition:transform 1.3s cubic-bezier(.3,.7,.3,1),opacity 1.3s ease}
+.bud.open{transform:scale(.18);opacity:0}
 .leaf{position:absolute;cursor:pointer;z-index:4;transition:transform 1.1s ease,opacity 1.1s;animation:leafsway 4.5s ease-in-out infinite}
 .leaf:hover{filter:brightness(1.06)}
 .leaf.blown{animation:none;transform:translate(190px,-26px) rotate(300deg) !important;opacity:0}
@@ -343,15 +347,28 @@ main.show{opacity:1}
 .buoy-stage{position:relative;width:min(440px,88vw);height:min(340px,46vh);margin:14px auto 0;
   border-radius:24px;overflow:hidden;background:linear-gradient(180deg,#dfeaef,#cfe0e8 60%,#bcd3dd)}
 .bubble-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
-.wave{position:absolute;left:-10%;width:120%;height:60%;bottom:0;opacity:.6;z-index:1}
+.sea{position:absolute;left:0;right:0;bottom:-20%;height:82%;z-index:1;will-change:transform;pointer-events:none}
+.wave{position:absolute;left:-10%;width:120%;height:100%;bottom:0;opacity:.92}
 .buoy{position:absolute;left:50%;transform:translateX(-50%);bottom:38%;z-index:2;line-height:0}
-.buoy svg{width:66px;height:66px;filter:drop-shadow(0 8px 14px rgba(138,165,136,.4));animation:buoyglow 7s ease-in-out infinite}
+.buoy svg{width:78px;height:78px;filter:drop-shadow(0 8px 14px rgba(138,165,136,.4));animation:buoyglow 7s ease-in-out infinite}
+.buoy svg .orbit{transform-box:fill-box;transform-origin:center;animation:orbit 22s linear infinite}
+@keyframes orbit{to{transform:rotate(360deg)}}
+.stage-glow{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.3;
+  background:radial-gradient(ellipse 62% 52% at 50% 60%,rgba(214,238,245,.95),rgba(214,238,245,0) 72%)}
+.breath-ring{position:absolute;left:50%;top:50%;width:100px;height:100px;margin:-50px 0 0 -50px;border-radius:50%;
+  border:2px solid rgba(143,193,208,.55);box-shadow:0 0 16px rgba(191,224,234,.45);pointer-events:none;z-index:0;
+  transform:translate(-50%,-50%) scale(.6);opacity:0;transition:transform .25s linear,opacity .25s linear}
+.buoy-reflect{position:absolute;left:50%;width:72px;height:14px;margin-left:-36px;bottom:36%;border-radius:50%;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(255,255,255,.55),rgba(255,255,255,0) 72%);filter:blur(2px);opacity:.4}
+.wave .foam{fill:none;stroke:rgba(255,255,255,.75);stroke-width:2.4;stroke-linecap:round}
 @keyframes buoyglow{0%,100%{filter:drop-shadow(0 8px 14px rgba(138,165,136,.35))}50%{filter:drop-shadow(0 10px 22px rgba(143,193,208,.6))}}
 .breath-word{position:absolute;top:16px;left:0;right:0;text-align:center;font-family:var(--serif);
-  font-size:22px;color:#5c6b60;letter-spacing:.3em;text-indent:.3em;z-index:3}
+  font-size:22px;color:#5c6b60;letter-spacing:.3em;text-indent:.3em;z-index:3;opacity:1;transition:opacity .25s}
 .ice-stage{width:min(360px,80vw);margin:14px auto 0;text-align:center}
 .ice{width:160px;height:170px;margin:0 auto;position:relative}
 .ice .cube{transform-box:fill-box;transform-origin:bottom center;transition:transform 1s linear}
+.ice svg{animation:icebob 5.5s ease-in-out infinite}
+@keyframes icebob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .drip{animation:dripfall 1.3s ease-in forwards}
 @keyframes dripfall{from{transform:translateY(0);opacity:.7}to{transform:translateY(46px);opacity:0}}
 /* 呼吸浮標的柔光暈：隨吸氣脹、呼氣縮 */
@@ -362,8 +379,43 @@ main.show{opacity:1}
 /* 冰塊頂端會閃爍的冰晶星（融化時由外層 group 淡出） */
 .ice-sparkle{transform-box:fill-box;transform-origin:center;animation:icespark 2.6s ease-in-out infinite}
 @keyframes icespark{0%,100%{opacity:.22;transform:scale(.7)}50%{opacity:.95;transform:scale(1.18)}}
+/* 冰塊融化：倒數環（不影響聲音浴的 .timer-ring 基礎樣式） */
+#iceTimer{position:relative;width:104px;height:104px;margin:14px auto 0;display:flex;align-items:center;justify-content:center;font-size:0}
+#iceTimer .ring-svg{position:absolute;inset:0;transform:rotate(-90deg)}
+#iceTimer .ring-bg{fill:none;stroke:rgba(143,193,208,.22);stroke-width:6}
+#iceTimer .ring-fg{fill:none;stroke:var(--sage);stroke-width:6;stroke-linecap:round;stroke-dasharray:276.46;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear}
+#iceTimer .ring-text{position:relative;font-family:var(--serif);font-size:25px;color:var(--ink);letter-spacing:.04em}
 .hug-face{font-size:56px;margin:10px}
 .hug-line{font-family:var(--serif);font-size:20px;color:var(--ink);margin-top:10px;min-height:1.6em}
+/* 螢火蟲之森（EMDR 雙側視覺刺激）：舞台視窗放大，讓螢火蟲有足夠飛行距離 */
+.sense-view.ff-wide{max-width:min(1360px,99vw)}
+.firefly-stage{position:relative;width:100%;height:min(82vh,860px);margin:14px auto 0;border-radius:28px;overflow:hidden;
+  background:#1b2a24;box-shadow:0 24px 70px var(--shadow)}
+.ff-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
+  filter:saturate(.9) brightness(.82) contrast(1.02)}
+.ff-vignette{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 82% 72% at 50% 44%,rgba(0,0,0,0) 52%,rgba(8,18,14,.55) 100%)}
+.ff-field{position:absolute;inset:0;z-index:2}
+.firefly{position:absolute;left:0;border-radius:50%;will-change:transform;transform:translateX(0);
+  background:radial-gradient(circle at 50% 50%,#fff6cf 0%,#f1e08a 34%,rgba(226,210,120,.32) 60%,rgba(226,210,120,0) 72%);
+  box-shadow:0 0 12px 4px rgba(240,224,140,.5);animation:ffdrift linear infinite}
+.firefly::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;
+  background:#fffbe6;box-shadow:0 0 6px 2px rgba(255,250,210,.9)}
+@keyframes ffdrift{
+  0%{transform:translateX(0);opacity:.25}
+  12%{opacity:1}
+  48%{transform:translateX(var(--travel));opacity:1}
+  54%{transform:translateX(var(--travel));opacity:.9}
+  88%{opacity:1}
+  100%{transform:translateX(0);opacity:.25}
+}
+.firefly-stage.paused .firefly{animation-play-state:paused}
+.firefly-stage.reduced .firefly{animation-name:fftwinkle}
+@keyframes fftwinkle{0%,100%{opacity:.3}50%{opacity:1}}
+.ff-toggle{position:absolute;top:14px;right:14px;z-index:3;padding:8px 20px;font-size:13px;letter-spacing:.1em}
+.ff-caption{position:absolute;left:0;right:0;bottom:18px;z-index:3;text-align:center;pointer-events:none;
+  font-family:var(--serif);font-size:17px;line-height:1.95;color:#eef3e6;letter-spacing:.1em;
+  text-shadow:0 1px 10px rgba(0,0,0,.55);opacity:.92}
 
 /* 時間包裹 */
 .capsule-write textarea{
@@ -530,7 +582,7 @@ main.show{opacity:1}
   <div class="kit-tabs">
     <button class="soft-btn" data-kit="breath">呼吸浮標</button>
     <button class="soft-btn" data-kit="ice">冰塊融化</button>
-    <button class="soft-btn" data-kit="hug">聲音擁抱</button>
+    <button class="soft-btn" data-kit="firefly">螢火蟲之森</button>
   </div>
   <div class="sense-view" id="kitView"></div>
 </section>
@@ -620,7 +672,7 @@ const rooms=[
    icon:`<svg viewBox="0 0 64 64"><path d="M32 14 a14 14 0 0 0 0 28 a11 11 0 0 1 0 -28" fill="#f4d99a" opacity=".85"/><circle cx="32" cy="28" r="16" fill="none" stroke="#8aa588" stroke-width="1.6" opacity=".5"/></svg>`},
   {id:'room-garden',t:'寧靜花園',d:'不用求助，只需澆水、掃葉。復元，會自己慢慢發生。',go:'照料花園 →',
    icon:`<svg viewBox="0 0 64 64"><path d="M32 50 V30" stroke="#8aa588" stroke-width="2.4" stroke-linecap="round"/><path d="M32 34 q-12 -2 -14 -14 q12 0 14 14" fill="#a9c0a6" opacity=".8"/><path d="M32 30 q12 -4 15 -16 q-13 2 -15 16" fill="#b9cad4" opacity=".8"/><path d="M20 50 h24" stroke="#e7ddca" stroke-width="3" stroke-linecap="round"/></svg>`},
-  {id:'room-kit',t:'隨身唞氣包',d:'呼吸浮標、冰塊融化、聲音擁抱 —— 急起來時的小工具。',go:'打開背包 →',
+  {id:'room-kit',t:'隨身唞氣包',d:'呼吸浮標、冰塊融化、螢火蟲之森 —— 急起來時的小工具。',go:'打開背包 →',
    icon:`<svg viewBox="0 0 64 64"><path d="M20 24 h24 a4 4 0 0 1 4 4 v20 a4 4 0 0 1 -4 4 h-24 a4 4 0 0 1 -4 -4 v-20 a4 4 0 0 1 4 -4z" fill="none" stroke="#8aa588" stroke-width="2"/><path d="M26 24 v-4 a6 6 0 0 1 12 0 v4" fill="none" stroke="#b9cad4" stroke-width="2"/><circle cx="32" cy="38" r="4" fill="#a9c0a6"/></svg>`},
   {id:'room-capsule',t:'時間的包裹',d:'寫給未來自己的一句話。時間到了，它會再來看你。',go:'寄一封信 →',
    icon:`<svg viewBox="0 0 64 64"><rect x="14" y="20" width="36" height="26" rx="4" fill="none" stroke="#8aa588" stroke-width="2"/><path d="M14 22 L32 36 L50 22" fill="none" stroke="#b9cad4" stroke-width="2"/><circle cx="46" cy="18" r="6" fill="#f4d99a" opacity=".8"/></svg>`},
@@ -922,7 +974,15 @@ function plantSVG(leftPct,bloomColor,idTag){
         <path d="M75 114 q30 -12 45 -38" stroke="#7fa07d" stroke-width="1.1" fill="none" opacity=".5"/>
         <path d="M75 158 q-26 -5 -34 -28 q28 3 34 28" fill="#9cc19a"/>
       </g>
-      <g transform="translate(75,66)"><g class="bloom">
+      <g transform="translate(75,66)"><g class="bud">
+        <path d="M0 10 Q-12 6 -14 -6 Q-3 0 0 10 Z" fill="url(#leafG${idTag})"/>
+        <path d="M0 10 Q12 6 14 -6 Q3 0 0 10 Z" fill="url(#leafG${idTag})"/>
+        <path d="M0 -24 C8 -18 8 -4 0 8 C-8 -4 -8 -18 0 -24 Z" fill="url(#bloomG${idTag})"/>
+        <path d="M0 -22 V6" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.2" fill="none"/>
+        <path d="M-4 -16 Q-6 -8 -3 2" stroke="#ffffff" stroke-opacity=".4" stroke-width="1" fill="none"/>
+        <path d="M4 -16 Q6 -8 3 2" stroke="#ffffff" stroke-opacity=".4" stroke-width="1" fill="none"/>
+        <ellipse cx="-2.5" cy="-13" rx="2.2" ry="4.5" fill="#ffffff" opacity=".35"/>
+      </g><g class="bloom">
         ${back}${front}
         <circle r="8.5" fill="url(#coreG${idTag})"/>${stamen}
       </g><circle class="bloom-halo" r="42" fill="url(#bloomHaloG${idTag})"/><circle class="bloom-aura" r="34" fill="url(#bloomHaloG${idTag})"/></g>
@@ -1099,40 +1159,68 @@ function rain(s){
   // 雨停後，葉與草上留下微閃的露珠
   setTimeout(()=>dewDrops(s,7),700);
 }
+function openPlant(tag){
+  const p=document.querySelector('#plant'+tag);
+  if(!p||p.dataset.bloom)return;p.dataset.bloom=1;
+  const b=p.querySelector('.bloom');if(b)b.classList.add('open');
+  const bud=p.querySelector('.bud');if(bud)bud.classList.add('open');
+}
 function grow(){
   gardenGrow=Math.min(gardenGrow+1,8);
   const sc=0.5+gardenGrow*0.07;
   $$('.plant').forEach(p=>{p.style.transition='transform 1.6s cubic-bezier(.2,.8,.2,1)';p.style.transform=`translateX(-50%) scale(${sc})`;});
-  if(gardenGrow>=4){const b=document.querySelector('#plant1 .bloom');if(b)b.classList.add('open');}
-  if(gardenGrow>=6){const b=document.querySelector('#plant2 .bloom');if(b)b.classList.add('open');}
-  if(gardenGrow>=7){const b=document.querySelector('#plant3 .bloom');if(b)b.classList.add('open');}
+  // 先長高（花蕾），到足夠高度才綻放：讓每朵都經歷「花蕾→開花」，不會一上來就直接開花
+  if(gardenGrow>=5)openPlant('1');
+  if(gardenGrow>=6)openPlant('2');
+  if(gardenGrow>=7)openPlant('3');
 }
 function gardenSay(t){const el=$('#gardenSay');el.classList.remove('show');setTimeout(()=>{el.innerHTML=t;el.classList.add('show');},200);}
 
 /* ============ 隨身唞氣包 ============ */
 $('#amulet').addEventListener('click',()=>openRoom('room-kit'));
 $$('[data-kit]').forEach(b=>b.addEventListener('click',()=>{
-  breathOn=false;
+  breathOn=false;fireflyOn=false;
   $$('[data-kit]').forEach(x=>x.classList.remove('active'));b.classList.add('active');
   const v=$('#kitView'),t=b.dataset.kit;
+  v.classList.remove('ff-wide');
   if(t==='breath')v.innerHTML=breathHTML(),startBreath();
   if(t==='ice')v.innerHTML=iceHTML(),startIce();
-  if(t==='hug')v.innerHTML=hugHTML(),bindHug();
+  if(t==='firefly'){v.classList.add('ff-wide');v.innerHTML=fireflyHTML(),startFirefly();}
 }));
 function breathHTML(){return `
   <div class="buoy-stage" id="buoyStage">
+    <div class="stage-glow" id="stageGlow"></div>
     <canvas class="bubble-canvas" id="bubbleC"></canvas>
     <div class="breath-word" id="breathWord">準備好，跟著浮標一起呼吸</div>
-    <div class="buoy" id="buoy"><div class="buoy-halo" id="buoyHalo"></div><svg viewBox="0 0 64 64" width="66" height="66"><defs><radialGradient id="orbG" cx="38%" cy="34%"><stop offset="0" stop-color="#fbfdff"/><stop offset="55%" stop-color="#bfe0ea"/><stop offset="100%" stop-color="#8fc1d0"/></radialGradient></defs><circle cx="32" cy="32" r="22" fill="url(#orbG)"/><circle cx="32" cy="32" r="22" fill="none" stroke="#ffffff" stroke-width="1" opacity=".3"/><path d="M19 25 Q32 15 45 25" stroke="#ffffff" stroke-width="1.4" fill="none" opacity=".5"/><circle cx="26" cy="26" r="5.5" fill="#ffffff" opacity=".7"/></svg></div>
-    <svg class="wave wave2" viewBox="0 0 400 120" preserveAspectRatio="none"><path id="waveP2" d="M0 60 Q100 40 200 60 T400 60 V120 H0 Z" fill="#cfe3ea"/></svg>
-    <svg class="wave" viewBox="0 0 400 120" preserveAspectRatio="none"><path id="waveP" d="M0 60 Q100 40 200 60 T400 60 V120 H0 Z" fill="#a9c3d0"/></svg>
+    <div class="buoy" id="buoy">
+      <div class="buoy-halo" id="buoyHalo"></div>
+      <div class="breath-ring" id="bRing1"></div>
+      <div class="breath-ring" id="bRing2"></div>
+      <svg viewBox="0 0 80 80" width="78" height="78"><defs>
+        <radialGradient id="orbG" cx="38%" cy="32%"><stop offset="0" stop-color="#ffffff"/><stop offset="45%" stop-color="#cdeaf1"/><stop offset="100%" stop-color="#8fc1d0"/></radialGradient>
+        <radialGradient id="orbCore" cx="50%" cy="48%"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+      </defs>
+        <circle cx="40" cy="40" r="28" fill="url(#orbG)"/>
+        <circle cx="40" cy="40" r="28" fill="none" stroke="#ffffff" stroke-width="1" opacity=".35"/>
+        <path d="M22 30 Q40 17 58 30" stroke="#ffffff" stroke-width="1.6" fill="none" opacity=".55"/>
+        <ellipse cx="35" cy="33" rx="12" ry="9" fill="url(#orbCore)"/>
+        <circle cx="31" cy="30" r="4.5" fill="#ffffff" opacity=".85"/>
+        <circle cx="40" cy="40" r="33" fill="none" stroke="rgba(143,193,208,.5)" stroke-width="1" stroke-dasharray="5 11" class="orbit"/>
+      </svg>
+    </div>
+    <div class="buoy-reflect" id="buoyReflect"></div>
+    <div class="sea" id="sea">
+      <svg class="wave wave2" viewBox="0 0 400 120" preserveAspectRatio="none"><path id="waveP2" d="M0 12 Q100 2 200 12 T400 12 V120 H0 Z" fill="#cfe3ea"/><path id="waveFoam" class="foam" d="M0 12 Q100 2 200 12 T400 12"/></svg>
+      <svg class="wave" viewBox="0 0 400 120" preserveAspectRatio="none"><path id="waveP" d="M0 12 Q100 2 200 12 T400 12 V120 H0 Z" fill="#a9c3d0"/></svg>
+    </div>
   </div>
   <p class="audio-note">看著浮標隨海浪起伏就好 —— 升起時吸氣，落下時呼氣。</p>`;
 }
 let breathRAF,breathOn=false;
 function startBreath(){
   breathOn=true;
-  const buoy=$('#buoy'),word=$('#breathWord'),stage=$('#buoyStage'),halo=$('#buoyHalo');
+  const buoy=$('#buoy'),word=$('#breathWord'),stage=$('#buoyStage'),halo=$('#buoyHalo'),glow=$('#stageGlow'),bRing1=$('#bRing1'),bRing2=$('#bRing2'),reflect=$('#buoyReflect'),foam=$('#waveFoam'),sea=$('#sea');
+  let lastLabel='';
   const bc=$('#bubbleC');let bctx=null,bubbles=[],W=0,H=0;
   if(bc){const dpr=Math.min(devicePixelRatio||1,2);const rect=bc.getBoundingClientRect();W=rect.width;H=rect.height;bc.width=W*dpr;bc.height=H*dpr;bctx=bc.getContext('2d');bctx.scale(dpr,dpr);}
   function newBubble(fromBottom){return {x:Math.random()*W,y:fromBottom?H+8:Math.random()*H,r:1.5+Math.random()*3,vy:0.3+Math.random()*0.7,ph:Math.random()*6};}
@@ -1145,11 +1233,22 @@ function startBreath(){
     if(t<4/11){const p=t/(4/11);y=p;label='慢慢吸氣…';}
     else if(t<6/11){y=1;label='停一停…';}
     else{const p=(t-6/11)/(5/11);y=1-p;label='慢慢呼氣…';}
-    const bottom=25+y*35;buoy.style.bottom=bottom+'%';
-    if(halo){halo.style.transform='translate(-50%,-50%) scale('+(0.6+y*0.7).toFixed(2)+')';halo.style.opacity=(0.3+y*0.45).toFixed(2);}
-    word.textContent=label;
-    const wp=$('#waveP');if(wp){const off=Math.sin(now/900)*10;wp.setAttribute('d',`M0 ${60+off} Q100 ${40-off} 200 ${60+off} T400 ${60+off} V120 H0 Z`);}
-    const wp2=$('#waveP2');if(wp2){const off2=Math.sin(now/1100+1.6)*10;wp2.setAttribute('d',`M0 ${60+off2} Q100 ${40-off2} 200 ${60+off2} T400 ${60+off2} V120 H0 Z`);}
+    const bottom=25+y*35;const tw=bottom+8;buoy.style.bottom=bottom+'%';
+    const off=Math.sin(now/900)*6, off2=Math.sin(now/1100+1.6)*6;
+    // 浮標貼著前層海浪的漣漪一起上下浮動（波浪起伏＋整片海升降維持不變）
+    const seaH=sea?sea.clientHeight:0;
+    const bob=off*(seaH/120)*1.15;
+    buoy.style.transform='translate(-50%,'+bob.toFixed(1)+'px)';
+    if(halo){halo.style.transform='translate(-50%,-50%) scale('+(0.6+y*0.8).toFixed(2)+')';halo.style.opacity=(0.28+y*0.5).toFixed(2);}
+    if(bRing1){bRing1.style.transform='translate(-50%,-50%) scale('+(0.55+y*0.95).toFixed(2)+')';bRing1.style.opacity=(0.08+y*0.34).toFixed(2);}
+    if(bRing2){bRing2.style.transform='translate(-50%,-50%) scale('+(0.4+y*0.7).toFixed(2)+')';bRing2.style.opacity=(0.05+y*0.22).toFixed(2);}
+    if(glow)glow.style.opacity=(0.22+y*0.42).toFixed(2);
+    if(reflect){reflect.style.bottom=(tw-1).toFixed(1)+'%';reflect.style.opacity=(0.25+y*0.4).toFixed(2);reflect.style.transform='translateY('+bob.toFixed(1)+'px)';}
+    if(label!==lastLabel){word.style.opacity='0';setTimeout(()=>{if(word){word.textContent=label;word.style.opacity='1';}},180);lastLabel=label;}
+    const wp=$('#waveP');if(wp)wp.setAttribute('d',`M0 ${12+off} Q100 ${2-off} 200 ${12+off} T400 ${12+off} V120 H0 Z`);
+    const wp2=$('#waveP2');if(wp2)wp2.setAttribute('d',`M0 ${12+off2} Q100 ${2-off2} 200 ${12+off2} T400 ${12+off2} V120 H0 Z`);
+    if(foam)foam.setAttribute('d',`M0 ${12+off2} Q100 ${2-off2} 200 ${12+off2} T400 ${12+off2}`);
+    if(sea){const sh=stage.clientHeight||340;const restW=-20+0.9*82;const tt=-(tw-restW)*sh/100;sea.style.transform='translateY('+tt.toFixed(1)+'px)';}
     if(bctx){bctx.clearRect(0,0,W,H);bubbles.forEach(b=>{b.y-=b.vy;if(b.y< -12){Object.assign(b,newBubble(true));}b.x+=Math.sin(now/600+b.ph)*0.3;bctx.beginPath();bctx.arc(b.x,b.y,b.r,0,7);bctx.fillStyle='rgba(255,255,255,'+(0.16+b.r*0.025)+')';bctx.fill();});}
     breathRAF=requestAnimationFrame(loop);
   }
@@ -1157,62 +1256,113 @@ function startBreath(){
 }
 function iceHTML(){return `
   <div class="ice-stage">
-    <div class="ice" id="ice"><svg viewBox="0 0 160 170" width="160" height="170"><defs>
-      <linearGradient id="iceG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eaf6fa"/><stop offset="60%" stop-color="#cfe6ef"/><stop offset="100%" stop-color="#aacfdc"/></linearGradient>
+    <div class="ice" id="ice"><svg viewBox="0 0 160 170" width="160" height="170">    <defs>
+      <linearGradient id="iceG" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#f3fbfd"/><stop offset="45%" stop-color="#d4ebf2"/><stop offset="100%" stop-color="#a6ccda"/></linearGradient>
+      <linearGradient id="iceTopG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbffff"/><stop offset="100%" stop-color="#e2f1f6"/></linearGradient>
+      <linearGradient id="iceSideG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9d6e0"/><stop offset="100%" stop-color="#94bccd"/></linearGradient>
       <radialGradient id="icePuddleG" cx="50%" cy="50%"><stop offset="0" stop-color="#d8eef4"/><stop offset="100%" stop-color="#aacfdc" stop-opacity=".15"/></radialGradient>
-      <linearGradient id="iceSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".7"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="iceSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
     </defs>
     <ellipse id="puddle" cx="80" cy="156" rx="14" ry="6" fill="url(#icePuddleG)" opacity=".5"/>
     <ellipse cx="80" cy="160" rx="42" ry="9" fill="#bfe0ea" opacity=".16"/>
+    <g id="puddleRipples"></g>
     <g class="cube" id="cube">
-      <rect id="iceRect" x="42" y="28" width="76" height="76" rx="16" fill="url(#iceG)" stroke="#9fc3d2" stroke-width="2" opacity=".88"/>
-      <path d="M42 46 L80 34 L118 46" fill="none" stroke="#f2f9fb" stroke-width="2" opacity=".7"/>
-      <path d="M42 94 L80 106 L118 94" fill="none" stroke="#f2f9fb" stroke-width="1.6" opacity=".42"/>
-      <path d="M58 32 L58 100" stroke="#f2f9fb" stroke-width="1.4" opacity=".5"/>
-      <path d="M80 34 L80 104" stroke="#f2f9fb" stroke-width="1.4" opacity=".4"/>
-      <path d="M99 32 L99 100" stroke="#f2f9fb" stroke-width="1.2" opacity=".32"/>
-      <rect x="42" y="28" width="76" height="76" rx="16" fill="url(#iceSheen)" opacity=".5"/>
+      <path d="M54,38 L57.34,30.44 Q64,26 72,26 L120,26 Q128,26 121.93,31.21 L120.07,32.79 Q114,38 106,38 Z" fill="url(#iceTopG)"/>
+      <path d="M120.07,32.79 L121.93,31.21 Q128,26 128,34 L128,82 Q128,90 121.93,95.21 L120.07,96.79 Q114,102 114,92 L114,46 Q114,38 120.07,32.79 Z" fill="url(#iceSideG)"/>
+      <path d="M56,102 L104,102 Q114,102 114,92 L114,48 Q114,38 104,38 L56,38 Q46,38 46,48 L46,92 Q46,102 56,102 Z" fill="url(#iceG)" stroke="#a7cad6" stroke-width="1.6"/>
+      <path d="M46,38 L114,38" stroke="#ffffff" stroke-width="1.3" opacity=".55" fill="none" stroke-linecap="round"/>
+      <path d="M114,38 L128,26" stroke="#ffffff" stroke-width="1.1" opacity=".5" fill="none" stroke-linecap="round"/>
+      <path d="M114,38 L114,102" stroke="#7fa6b6" stroke-width="1.2" opacity=".45" fill="none" stroke-linecap="round"/>
+      <path d="M46,38 L46,102" stroke="#ffffff" stroke-width=".9" opacity=".3" fill="none" stroke-linecap="round"/>
+      <path d="M62 44 L74 38 L92 40 L100 50 L96 70 L84 92" stroke="#ffffff" stroke-width=".8" opacity=".18" fill="none"/>
+      <path d="M58 60 L78 58 L96 64" stroke="#bfe0ea" stroke-width=".8" opacity=".25" fill="none"/>
+      <circle cx="72" cy="72" r="3.4" fill="#eaf6fa" opacity=".5"/><circle cx="70.5" cy="70.5" r="1" fill="#fff" opacity=".85"/>
+      <circle cx="92" cy="60" r="2.4" fill="#eaf6fa" opacity=".45"/><circle cx="91.2" cy="59" r=".7" fill="#fff" opacity=".85"/>
+      <circle cx="64" cy="86" r="1.8" fill="#eaf6fa" opacity=".4"/>
+      <path d="M56 50 Q52 70 60 92" stroke="#ffffff" stroke-width="3" fill="none" opacity=".35" stroke-linecap="round"/>
+      <ellipse cx="66" cy="54" rx="10" ry="16" fill="#ffffff" opacity=".22" transform="rotate(-18 66 54)"/>
+      <path d="M54,38 L57.34,30.44 Q64,26 72,26 L120,26 Q128,26 121.93,31.21 L120.07,32.79 Q114,38 106,38 Z" fill="url(#iceSheen)" opacity=".22"/>
+      <g id="iceCracks" opacity="0">
+        <path d="M80 42 L72 64 L86 82 L77 100" stroke="#ffffff" stroke-width="1" fill="none" opacity=".7"/>
+        <path d="M72 64 L58 70 M86 82 L102 76" stroke="#ffffff" stroke-width=".9" fill="none" opacity=".6"/>
+      </g>
     </g>
-    <g id="iceSpark"><g class="ice-sparkle"><path d="M80 14 L83 27 L96 30 L83 33 L80 46 L77 33 L64 30 L77 27 Z" fill="#ffffff"/></g></g>
+    <g id="iceSpark">
+      <g class="ice-sparkle"><path d="M80 10 L83 23 L96 26 L83 29 L80 42 L77 29 L64 26 L77 23 Z" fill="#ffffff"/></g>
+      <g class="ice-sparkle" style="animation-delay:.9s"><path d="M54 44 l2 7 7 2 -7 2 -2 7 -2 -7 -7 -2 7 -2 z" fill="#ffffff"/></g>
+      <g class="ice-sparkle" style="animation-delay:1.7s"><path d="M104 56 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2 z" fill="#ffffff"/></g>
+    </g>
     <g id="drips"></g></svg></div>
-    <div class="timer-ring" id="iceTimer" style="font-size:26px">02:00</div>
+    <div class="timer-ring" id="iceTimer">
+      <svg class="ring-svg" viewBox="0 0 100 100"><circle class="ring-bg" cx="50" cy="50" r="44"/><circle class="ring-fg" id="ringFg" cx="50" cy="50" r="44"/></svg>
+      <span class="ring-text" id="ringText">02:00</span>
+    </div>
     <p class="hug-line" id="iceMsg">等這塊冰融化成水，就去喝一杯水吧。</p>
     <button class="soft-btn" id="iceStart">放下這塊冰</button>
   </div>`;
 }
 function startIce(){
   $('#iceStart').addEventListener('click',()=>{
-    $('#iceStart').style.display='none';let sec=120;const cube=$('#cube'),puddle=$('#puddle'),drips=$('#drips'),spark=$('#iceSpark');
+    $('#iceStart').style.display='none';let sec=120;const cube=$('#cube'),puddle=$('#puddle'),drips=$('#drips'),spark=$('#iceSpark'),ringFg=$('#ringFg'),ringText=$('#ringText'),cracks=$('#iceCracks');
+    const C=2*Math.PI*44;
     clearInterval(timers.ice);let dripAcc=0;
-    timers.ice=setInterval(()=>{sec--;const p=sec/120;const m=String(Math.floor(sec/60)).padStart(2,'0'),s=String(sec%60).padStart(2,'0');$('#iceTimer').textContent=m+':'+s;
+    timers.ice=setInterval(()=>{sec--;const p=sec/120;const m=String(Math.floor(sec/60)).padStart(2,'0'),s=String(sec%60).padStart(2,'0');if(ringText)ringText.textContent=m+':'+s;
       if(cube){const sc=0.35+0.65*p;cube.style.transform='scale('+sc.toFixed(3)+')';}
       if(spark)spark.style.opacity=Math.max(0,p).toFixed(2);
+      if(ringFg)ringFg.style.strokeDashoffset=(C*(1-p)).toFixed(1);
+      if(cracks)cracks.setAttribute('opacity',Math.min(0.6,Math.max(0,(0.5-p)*2)).toFixed(2));
       if(puddle){puddle.setAttribute('rx',(14+(1-p)*44).toFixed(1));puddle.setAttribute('ry',(6+(1-p)*14).toFixed(1));puddle.setAttribute('opacity',(0.5+(1-p)*0.35).toFixed(2));}
       dripAcc++;if(dripAcc>=2&&sec>8){dripAcc=0;spawnDrip(drips);}
-      if(sec<=0){clearInterval(timers.ice);$('#iceMsg').textContent='冰化成水了。現在，去為自己倒一杯水吧。';$('#iceTimer').textContent='　';}
+      if(sec<=0){clearInterval(timers.ice);$('#iceMsg').textContent='冰化成水了。現在，去為自己倒一杯水吧。';if(ringText)ringText.textContent='完成';if(ringFg)ringFg.style.strokeDashoffset=C.toFixed(1);}
     },1000);
   });
 }
 function spawnDrip(g){
-  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  c.setAttribute('cx','80');c.setAttribute('cy','104');c.setAttribute('r','2.6');c.setAttribute('fill','#bfe0ea');
-  c.innerHTML=`<animate attributeName="cy" from="104" to="150" dur="1.2s"/><animate attributeName="opacity" values=".7;0" dur="1.2s"/>`;
+  const ns='http://www.w3.org/2000/svg';
+  const c=document.createElementNS(ns,'path');
+  c.setAttribute('d','M80 102 C76 113 76 121 80 125 C84 121 84 113 80 102 Z');
+  c.setAttribute('fill','#bfe0ea');
+  c.innerHTML='<animateTransform attributeName="transform" type="translate" from="0 0" to="0 42" dur="1.2s"/><animate attributeName="opacity" values=".8;0" dur="1.2s"/>';
   g.appendChild(c);setTimeout(()=>c.remove(),1300);
+  setTimeout(()=>{const rip=document.getElementById('puddleRipples');if(!rip)return;
+    const r=document.createElementNS(ns,'ellipse');r.setAttribute('cx','80');r.setAttribute('cy','152');r.setAttribute('rx','3');r.setAttribute('ry','1.4');
+    r.setAttribute('fill','none');r.setAttribute('stroke','#bfe0ea');r.setAttribute('stroke-width','1.4');
+    r.innerHTML='<animate attributeName="rx" from="3" to="16" dur=".7s"/><animate attributeName="ry" from="1.4" to="6" dur=".7s"/><animate attributeName="opacity" values=".6;0" dur=".7s"/>';
+    rip.appendChild(r);setTimeout(()=>r.remove(),800);},1080);
 }
-function hugHTML(){return `
-  <div class="hug-face">🌿</div>
-  <p class="hug-line" id="hugLine">按一下，聽一句給你的話。</p>
-  <div style="margin-top:14px"><button class="soft-btn" id="hugPlay">聲音擁抱</button></div>
-  <p class="audio-note">這是一段給你的話，可以重複聽。它會溫柔地淡入。</p>`;
+function fireflyHTML(){return `
+  <div class="firefly-stage" id="ffStage">
+    <img class="ff-bg" src="scenes/firefly-forest.png" alt="">
+    <div class="ff-vignette"></div>
+    <div class="ff-field" id="ffField"></div>
+    <button class="soft-btn ff-toggle" id="ffToggle">暫停</button>
+    <p class="ff-caption" id="ffCaption">跟著螢火蟲的移動，讓目光輕輕左右走。<br>不用勉強，跟得上就好 —— 這是一種安撫神經的雙側刺激。</p>
+  </div>`;
 }
-const hugWords=['你已經，做得很好了。','辛苦了。真的，辛苦你了。','你不需要一個人扛。','此刻你在這裡，就已經足夠。','慢慢來，我陪著你。'];
-function bindHug(){
-  $('#hugPlay').addEventListener('click',()=>{
-    const w=hugWords[Math.floor(Math.random()*hugWords.length)];
-    $('#hugLine').textContent=w;
-    // 溫柔的 TTS（若瀏覽器支援），失敗則僅顯示文字
-    try{if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.lang='zh-HK';u.rate=.82;u.pitch=1;const vs=speechSynthesis.getVoices();const v=vs.find(x=>/zh|Cantonese|Chinese/i.test(x.lang+x.name));if(v)u.voice=v;speechSynthesis.speak(u);}}catch(e){}
-  });
+let fireflyOn=false;
+function startFirefly(){
+  fireflyOn=true;
+  const stage=$('#ffStage');if(!stage)return;
+  if(reduceMotion)stage.classList.add('reduced');
+  const field=$('#ffField');if(!field)return;
+  field.innerHTML='';
+  const w=stage.clientWidth, h=stage.clientHeight;
+  const N=reduceMotion?9:8;
+  for(let i=0;i<N;i++){
+    const f=document.createElement('div');f.className='firefly';
+    const size=8+Math.random()*9;                 // 8–17px
+    f.style.width=f.style.height=size.toFixed(0)+'px';
+    f.style.top=(8+Math.random()*78).toFixed(1)+'%'; // 散落在畫面上半至中下段
+    f.style.left='0';
+    const dur=(reduceMotion?5:8)+Math.random()*5;  // 8–13s（減動偏好則 5–10s 且僅明滅）
+    f.style.animationDuration=dur.toFixed(1)+'s';
+    f.style.animationDelay=(-Math.random()*dur).toFixed(1)+'s'; // 錯開，形成連續左右流動
+    const travel=Math.max(0,w-size-14);
+    f.style.setProperty('--travel',travel+'px');
+    field.appendChild(f);
+  }
+  const tg=$('#ffToggle');
+  if(tg)tg.onclick=()=>{const p=stage.classList.toggle('paused');tg.textContent=p?'繼續':'暫停';};
 }
 
 /* ============ 時間的包裹 ============ */
