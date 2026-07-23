@@ -396,22 +396,22 @@ main.show{opacity:1}
 .ff-vignette{position:absolute;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(ellipse 82% 72% at 50% 44%,rgba(0,0,0,0) 52%,rgba(8,18,14,.55) 100%)}
 .ff-field{position:absolute;inset:0;z-index:2}
-.firefly{position:absolute;left:0;border-radius:50%;will-change:transform;transform:translateX(0);
-  background:radial-gradient(circle at 50% 50%,#fff6cf 0%,#f1e08a 34%,rgba(226,210,120,.32) 60%,rgba(226,210,120,0) 72%);
-  box-shadow:0 0 12px 4px rgba(240,224,140,.5);animation:ffdrift linear infinite}
-.firefly::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;
-  background:#fffbe6;box-shadow:0 0 6px 2px rgba(255,250,210,.9)}
-@keyframes ffdrift{
-  0%{transform:translateX(0);opacity:.25}
-  12%{opacity:1}
-  48%{transform:translateX(var(--travel));opacity:1}
-  54%{transform:translateX(var(--travel));opacity:.9}
-  88%{opacity:1}
-  100%{transform:translateX(0);opacity:.25}
-}
+.firefly{position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;will-change:transform,opacity;z-index:3;
+  background:radial-gradient(circle at 50% 46%,#fffdf3 0%,#fbedb0 24%,#efd877 47%,rgba(226,204,110,.30) 66%,rgba(226,204,110,0) 80%);
+  box-shadow:0 0 24px 8px rgba(247,231,150,.55),0 0 60px 22px rgba(247,231,150,.26);
+  animation:ffglow 3.6s ease-in-out infinite}
+.firefly::before{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;
+  background:#fffef5;box-shadow:0 0 12px 5px rgba(255,253,222,.95)}
+.firefly::after{content:"";position:absolute;left:35%;top:31%;width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.9);filter:blur(.4px)}
+@keyframes ffglow{0%,100%{opacity:.85;filter:brightness(.92)}50%{opacity:1;filter:brightness(1.16)}}
+.ff-trail{position:absolute;left:0;top:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;pointer-events:none;z-index:2;
+  background:radial-gradient(circle,#fbeea6 0%,rgba(243,224,140,.5) 45%,rgba(243,224,140,0) 72%);
+  animation:fftrail 1.15s ease-out forwards}
+@keyframes fftrail{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(.32)}}
 .firefly-stage.paused .firefly{animation-play-state:paused}
-.firefly-stage.reduced .firefly{animation-name:fftwinkle}
-@keyframes fftwinkle{0%,100%{opacity:.3}50%{opacity:1}}
+.firefly-stage.reduced .firefly{animation-name:fftwinkle;left:50%!important;top:50%!important;transform:none!important}
+@keyframes fftwinkle{0%,100%{opacity:.4}50%{opacity:1}}
 .ff-toggle{position:absolute;top:14px;right:14px;z-index:3;padding:8px 20px;font-size:13px;letter-spacing:.1em}
 .ff-caption{position:absolute;left:0;right:0;bottom:18px;z-index:3;text-align:center;pointer-events:none;
   font-family:var(--serif);font-size:17px;line-height:1.95;color:#eef3e6;letter-spacing:.1em;
@@ -1179,7 +1179,7 @@ function gardenSay(t){const el=$('#gardenSay');el.classList.remove('show');setTi
 /* ============ 隨身唞氣包 ============ */
 $('#amulet').addEventListener('click',()=>openRoom('room-kit'));
 $$('[data-kit]').forEach(b=>b.addEventListener('click',()=>{
-  breathOn=false;fireflyOn=false;
+  breathOn=false;fireflyOn=false;if(ffRAF){cancelAnimationFrame(ffRAF);ffRAF=0;}
   $$('[data-kit]').forEach(x=>x.classList.remove('active'));b.classList.add('active');
   const v=$('#kitView'),t=b.dataset.kit;
   v.classList.remove('ff-wide');
@@ -1336,33 +1336,53 @@ function fireflyHTML(){return `
     <div class="ff-vignette"></div>
     <div class="ff-field" id="ffField"></div>
     <button class="soft-btn ff-toggle" id="ffToggle">暫停</button>
-    <p class="ff-caption" id="ffCaption">跟著螢火蟲的移動，讓目光輕輕左右走。<br>不用勉強，跟得上就好 —— 這是一種安撫神經的雙側刺激。</p>
+    <p class="ff-caption" id="ffCaption">跟著一隻螢火蟲，讓目光輕輕左右走。<br>不用勉強，跟得上就好 —— 這是一種安撫神經的雙側刺激。</p>
   </div>`;
 }
-let fireflyOn=false;
+let fireflyOn=false, ffRAF=0, ffStart=0, ffPauseAt=0, ffLastSpawn=0;
+const FF=38; // 螢火蟲直徑（須與 CSS 一致）
+function spawnTrail(field,x,y){
+  const d=document.createElement('div');d.className='ff-trail';
+  d.style.left=x.toFixed(1)+'px';d.style.top=y.toFixed(1)+'px';
+  field.appendChild(d);
+  setTimeout(()=>d.remove(),1180);
+  const all=field.querySelectorAll('.ff-trail');
+  if(all.length>34)all[0].remove();
+}
+function bindFFTog(stage){
+  const tg=$('#ffToggle');
+  if(tg)tg.onclick=()=>{
+    const p=stage.classList.toggle('paused');
+    tg.textContent=p?'繼續':'暫停';
+    if(p){ffPauseAt=performance.now();if(ffRAF){cancelAnimationFrame(ffRAF);ffRAF=0;}}
+    else if(!reduceMotion){ffStart+=performance.now()-ffPauseAt;ffRAF=requestAnimationFrame(ffLoop);}
+  };
+}
+function ffLoop(){
+  const stage=$('#ffStage'),field=$('#ffField');if(!stage||!field){return;}
+  const w=stage.clientWidth,h=stage.clientHeight;
+  const t=(performance.now()-ffStart)/1000;
+  const HP=2.2;                                   // EMDR 全週期（左→右→左）秒，約 0.45Hz
+  const hx=Math.sin(2*Math.PI*t/HP);              // -1..1，兩端自然減速停頓
+  const margin=46;
+  const cx=w/2+hx*(w/2-margin);                    // 水平：穩定左右掃描
+  const VAMP=h*0.14, cy=h/2+Math.sin(2*Math.PI*t/6.5+0.6)*VAMP+Math.sin(2*Math.PI*t/13.5)*h*0.045; // 垂直：緩慢有機游移
+  const f=$('#ffMain');if(f)f.style.transform=`translate(${(cx-FF/2).toFixed(1)}px,${(cy-FF/2).toFixed(1)}px)`;
+  const now=performance.now();
+  if(now-ffLastSpawn>36){ffLastSpawn=now;if(f)spawnTrail(field,cx,cy);}
+  ffRAF=requestAnimationFrame(ffLoop);
+}
 function startFirefly(){
   fireflyOn=true;
   const stage=$('#ffStage');if(!stage)return;
-  if(reduceMotion)stage.classList.add('reduced');
   const field=$('#ffField');if(!field)return;
   field.innerHTML='';
-  const w=stage.clientWidth, h=stage.clientHeight;
-  const N=reduceMotion?9:8;
-  for(let i=0;i<N;i++){
-    const f=document.createElement('div');f.className='firefly';
-    const size=8+Math.random()*9;                 // 8–17px
-    f.style.width=f.style.height=size.toFixed(0)+'px';
-    f.style.top=(8+Math.random()*78).toFixed(1)+'%'; // 散落在畫面上半至中下段
-    f.style.left='0';
-    const dur=(reduceMotion?5:8)+Math.random()*5;  // 8–13s（減動偏好則 5–10s 且僅明滅）
-    f.style.animationDuration=dur.toFixed(1)+'s';
-    f.style.animationDelay=(-Math.random()*dur).toFixed(1)+'s'; // 錯開，形成連續左右流動
-    const travel=Math.max(0,w-size-14);
-    f.style.setProperty('--travel',travel+'px');
-    field.appendChild(f);
-  }
-  const tg=$('#ffToggle');
-  if(tg)tg.onclick=()=>{const p=stage.classList.toggle('paused');tg.textContent=p?'繼續':'暫停';};
+  if(ffRAF){cancelAnimationFrame(ffRAF);ffRAF=0;}
+  if(reduceMotion){stage.classList.add('reduced');const f=document.createElement('div');f.className='firefly';field.appendChild(f);bindFFTog(stage);return;}
+  const f=document.createElement('div');f.className='firefly';f.id='ffMain';field.appendChild(f);
+  bindFFTog(stage);
+  ffStart=performance.now();ffPauseAt=0;ffLastSpawn=0;
+  ffRAF=requestAnimationFrame(ffLoop);
 }
 
 /* ============ 時間的包裹 ============ */
