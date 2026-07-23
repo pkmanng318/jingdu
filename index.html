@@ -1055,13 +1055,17 @@ function wateringCanSVG(){
           <circle cx="16.5" cy="65" r="1.2"/><circle cx="22" cy="65" r="1.2"/>
         </g>
       </g>
-      <!-- 壺身 -->
-      <path d="M80 51 Q76 106 116 112 Q156 106 152 51 Z" fill="url(#canG)" stroke="#5f9b70" stroke-width="1.8"/>
+      <!-- 壺身：圓潤桶身，底部寬圓而非尖角 -->
+      <path d="M82 52 C77 76 80 98 95 105 Q116 111 137 105 C152 98 155 76 150 52 Z" fill="url(#canG)" stroke="#5f9b70" stroke-width="1.8"/>
+      <!-- 平底基座（坐在地面上，不尖） -->
+      <ellipse cx="116" cy="108" rx="22" ry="3.6" fill="#3f6e52" opacity=".5"/>
+      <!-- 壺身下緣接縫線，增加立體感 -->
+      <path d="M84 95 Q116 102 148 95" fill="none" stroke="#5f9b70" stroke-width="1" opacity=".4"/>
       <!-- 壺口 -->
       <ellipse cx="116" cy="50" rx="37" ry="8.5" fill="#d6ecd9" stroke="#5f9b70" stroke-width="1.6"/>
       <ellipse cx="116" cy="50" rx="29" ry="5.5" fill="#86b88f"/>
       <!-- 壺身高光 -->
-      <path d="M93 60 Q90 96 116 105 Q104 96 102 60 Z" fill="url(#canShine)"/>
+      <path d="M94 58 Q90 98 108 104 Q99 96 103 58 Z" fill="url(#canShine)"/>
       <circle id="canSpout" cx="15" cy="59" r="2" fill="transparent"/>
     </svg>
   </div>`;
