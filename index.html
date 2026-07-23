@@ -1235,7 +1235,7 @@ function getHoles(stage){
   const sr=stage.getBoundingClientRect();
   return holes.map(h=>{const r=h.getBoundingClientRect();return {x:r.left+r.width/2-sr.left,y:r.top+r.height/2-sr.top};});
 }
-function emitDrop(layer,sx,sy,landY,jit){
+function emitDrop(stage,layer,sx,sy,landY,jit,onLand){
   jit=jit||{dx:0,dy:0,ang:0};
   // 物理拋物線：初速指向花灑頭朝外法線（傾斜後約朝左下），重力使其向下彎成弧
   const V=160,g=470;                          // 初速(px/s) 與 重力（重力變小 → 下落更慢、懸浮更久、射程更遠）
@@ -1258,7 +1258,8 @@ function emitDrop(layer,sx,sy,landY,jit){
     {offsetDistance:'72%',opacity:.92},
     {offsetDistance:'100%',opacity:0}
   ],{duration:dur,easing:'linear',fill:'forwards'});
-  a.onfinish=()=>{splashAt(layer,ex,landY);drop.remove();};
+  // 生長判定改在水滴「真正落下的位置」：落點 x 命中哪朵花，哪朵才長
+  a.onfinish=()=>{splashAt(layer,ex,landY);if(onLand)onLand(ex);drop.remove();};
 }
 function spawnStream(stage){
   const layer=document.getElementById('waterLayer');if(!layer)return;
@@ -1266,17 +1267,20 @@ function spawnStream(stage){
   if(!holes||!holes.length){const s=getSpout(stage);if(!s)return;holes=[s];}
   const n=holes.length;
   const cx=holes.reduce((a,p)=>a+p.x,0)/n;
-  const plant=plantUnder(stage,cx);
+  // 中心植株只用作弧線落點高度（幾何），不再用作出水口判定
+  const aimPlant=plantUnder(stage,cx);
   const sr=stage.getBoundingClientRect();
-  const baseLandY=plant?(plant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
+  const baseLandY=aimPlant?(aimPlant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
   const jit=()=>({dx:(Math.random()*6-3),dy:(Math.random()*6-3),ang:(Math.random()*0.46-0.23)});
   // 輪流：每次只從一個孔噴一顆細碎水滴，並錯開時間，避免全部擠成一顆大水滴
+  // 每 tick 至多觸發一次生長（落點命中花才長），保持原本節奏；判定依落點 x
+  let grewThisTick=false;
+  const tryGrow=ex=>{if(grewThisTick)return;const pl=plantUnder(stage,ex);if(pl){grewThisTick=true;waterPlant(pl);}};
   const h0=holes[holeCursor%n];holeCursor++;
-  emitDrop(layer,h0.x,h0.y,baseLandY+(Math.random()*20-10),jit());
+  emitDrop(stage,layer,h0.x,h0.y,baseLandY+(Math.random()*20-10),jit(),tryGrow);
   // 第二顆稍後從下一個孔噴出（錯落細流，而非同時密集）
   const h1=holes[holeCursor%n];holeCursor++;
-  setTimeout(()=>{if(canActive)emitDrop(layer,h1.x,h1.y,baseLandY+(Math.random()*20-10),jit());},85);
-  if(plant&&!plant.dataset.bloom)waterPlant(plant);
+  setTimeout(()=>{if(canActive)emitDrop(stage,layer,h1.x,h1.y,baseLandY+(Math.random()*20-10),jit(),tryGrow);},85);
 }
 function waterPlant(p){
   let lv=+(p.dataset.level||0);lv=Math.min(lv+1,8);p.dataset.level=lv;
