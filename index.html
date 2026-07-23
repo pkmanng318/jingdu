@@ -1238,7 +1238,7 @@ function getHoles(stage){
 function emitDrop(layer,sx,sy,landY,jit){
   jit=jit||{dx:0,dy:0,ang:0};
   // 物理拋物線：初速指向花灑頭朝外法線（傾斜後約朝左下），重力使其向下彎成弧
-  const V=135,g=920;                          // 初速(px/s) 與 重力
+  const V=160,g=470;                          // 初速(px/s) 與 重力（重力變小 → 下落更慢、懸浮更久、射程更遠）
   const base=Math.atan2(0.40,-0.92);          // 基礎出水方向（向左下）
   const ang=base+jit.ang;                      // 每滴微小方向抖動
   const dx=Math.cos(ang),dy=Math.sin(ang);
@@ -1269,13 +1269,13 @@ function spawnStream(stage){
   const plant=plantUnder(stage,cx);
   const sr=stage.getBoundingClientRect();
   const baseLandY=plant?(plant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
-  const jit=()=>({dx:(Math.random()*5-2.5),dy:(Math.random()*5-2.5),ang:(Math.random()*0.30-0.15)});
+  const jit=()=>({dx:(Math.random()*6-3),dy:(Math.random()*6-3),ang:(Math.random()*0.46-0.23)});
   // 輪流：每次只從一個孔噴一顆細碎水滴，並錯開時間，避免全部擠成一顆大水滴
   const h0=holes[holeCursor%n];holeCursor++;
-  emitDrop(layer,h0.x,h0.y,baseLandY+(Math.random()*14-7),jit());
+  emitDrop(layer,h0.x,h0.y,baseLandY+(Math.random()*20-10),jit());
   // 第二顆稍後從下一個孔噴出（錯落細流，而非同時密集）
   const h1=holes[holeCursor%n];holeCursor++;
-  setTimeout(()=>{if(canActive)emitDrop(layer,h1.x,h1.y,baseLandY+(Math.random()*14-7),jit());},85);
+  setTimeout(()=>{if(canActive)emitDrop(layer,h1.x,h1.y,baseLandY+(Math.random()*20-10),jit());},85);
   if(plant&&!plant.dataset.bloom)waterPlant(plant);
 }
 function waterPlant(p){
