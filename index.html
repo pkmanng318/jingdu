@@ -315,9 +315,9 @@ main.show{opacity:1}
 .can-wrap.lifted{transform:rotate(-22deg);cursor:grabbing}
 .can-wrap svg{display:block;filter:drop-shadow(0 9px 13px rgba(110,140,110,.30))}
 .water-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
-.water-drop{position:absolute;left:0;top:0;width:12px;height:3.4px;border-radius:50%;
-  background:linear-gradient(90deg,rgba(178,210,226,.12),rgba(150,196,221,.96));
-  box-shadow:0 0 4px rgba(150,195,220,.5);
+.water-drop{position:absolute;left:0;top:0;width:7px;height:2.2px;border-radius:50%;
+  background:linear-gradient(90deg,rgba(186,214,228,.10),rgba(150,196,221,.92));
+  box-shadow:0 0 3px rgba(150,195,220,.38);
   offset-rotate:auto;offset-anchor:center;will-change:offset-distance}
 @keyframes flap{from{transform:rotateY(0deg)}to{transform:rotateY(62deg)}}
 @keyframes flit1{0%{transform:translate(0,0)}25%{transform:translate(120px,-30px)}50%{transform:translate(230px,10px)}75%{transform:translate(120px,44px)}100%{transform:translate(0,0)}}
@@ -1208,7 +1208,7 @@ function sweepLeaves(s){
   setTimeout(()=>{if($$('.leaf',s).length<3)for(let i=0;i<2;i++)addLeaf(s,true);},1800);
 }
 /* ---- 淋花水壺：提起水壺向左傾斜，由花灑頭持續滴水；水滴擊中哪朵花底，哪朵才生長 ---- */
-let canActive=false,canW=0,canH=0,dripTimer=0,dragOff={dx:0,dy:0},canX=0,canY=0;
+let canActive=false,canW=0,canH=0,dripTimer=0,dragOff={dx:0,dy:0},canX=0,canY=0,holeCursor=0;
 const PLANT_TOL=36;
 function getSpout(stage){
   const sp=document.getElementById('canSpout');if(!sp)return null;
@@ -1235,38 +1235,47 @@ function getHoles(stage){
   const sr=stage.getBoundingClientRect();
   return holes.map(h=>{const r=h.getBoundingClientRect();return {x:r.left+r.width/2-sr.left,y:r.top+r.height/2-sr.top};});
 }
-function emitDrop(layer,sx,sy,landY){
+function emitDrop(layer,sx,sy,landY,jit){
+  jit=jit||{dx:0,dy:0,ang:0};
   // 物理拋物線：初速指向花灑頭朝外法線（傾斜後約朝左下），重力使其向下彎成弧
-  const V=135,g=920;                 // 初速(px/s) 與 重力
-  const dx=-0.92,dy=0.40;            // 出水方向（向左下）
+  const V=135,g=920;                          // 初速(px/s) 與 重力
+  const base=Math.atan2(0.40,-0.92);          // 基礎出水方向（向左下）
+  const ang=base+jit.ang;                      // 每滴微小方向抖動
+  const dx=Math.cos(ang),dy=Math.sin(ang);
   const vx0=dx*V,vy0=dy*V;
-  const H=Math.max(18,landY-sy);
+  const ox=sx+jit.dx,oy=sy+jit.dy;
+  const H=Math.max(18,landY-oy);
   const Tf=(Math.sqrt(vy0*vy0+2*g*H)-vy0)/g;     // 落下總時間
-  const ex=sx+vx0*Tf;                            // 水平速度恆定 → 落地 x
-  const ccx=sx+vx0*(Tf*0.5),ccy=sy+vy0*(Tf*0.5); // 控制點：起點切線＝初速方向
+  const ex=ox+vx0*Tf;                            // 水平速度恆定 → 落地 x
+  const ccx=ox+vx0*(Tf*0.5),ccy=oy+vy0*(Tf*0.5); // 控制點：起點切線＝初速方向
   const drop=document.createElement('div');drop.className='water-drop';
-  drop.style.offsetPath=`path('M ${sx.toFixed(1)} ${sy.toFixed(1)} Q ${ccx.toFixed(1)} ${ccy.toFixed(1)} ${ex.toFixed(1)} ${landY.toFixed(1)}')`;
+  drop.style.offsetPath=`path('M ${ox.toFixed(1)} ${oy.toFixed(1)} Q ${ccx.toFixed(1)} ${ccy.toFixed(1)} ${ex.toFixed(1)} ${landY.toFixed(1)}')`;
   drop.style.offsetDistance='0%';
   layer.appendChild(drop);
   const dur=Math.max(360,Tf*1000);
   const a=drop.animate([
-    {offsetDistance:'0%',opacity:.95},
-    {offsetDistance:'72%',opacity:.95},
+    {offsetDistance:'0%',opacity:.92},
+    {offsetDistance:'72%',opacity:.92},
     {offsetDistance:'100%',opacity:0}
   ],{duration:dur,easing:'linear',fill:'forwards'});
   a.onfinish=()=>{splashAt(layer,ex,landY);drop.remove();};
 }
 function spawnStream(stage){
   const layer=document.getElementById('waterLayer');if(!layer)return;
-  let pts=getHoles(stage);
-  if(!pts||!pts.length){const s=getSpout(stage);if(!s)return;pts=[s];}
-  // 以花灑頭中心判定的目標植株與落點高度
-  const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length;
+  let holes=getHoles(stage);
+  if(!holes||!holes.length){const s=getSpout(stage);if(!s)return;holes=[s];}
+  const n=holes.length;
+  const cx=holes.reduce((a,p)=>a+p.x,0)/n;
   const plant=plantUnder(stage,cx);
   const sr=stage.getBoundingClientRect();
-  const landY=plant?(plant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
-  // 每個孔流出一束細長雨滴，沿拋物線弧落下；略作錯落更自然
-  pts.forEach(p=>{if(Math.random()<0.2)return;emitDrop(layer,p.x,p.y,landY);});
+  const baseLandY=plant?(plant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
+  const jit=()=>({dx:(Math.random()*3-1.5),dy:(Math.random()*3-1.5),ang:(Math.random()*0.12-0.06)});
+  // 輪流：每次只從一個孔噴一顆細碎水滴，並錯開時間，避免全部擠成一顆大水滴
+  const h0=holes[holeCursor%n];holeCursor++;
+  emitDrop(layer,h0.x,h0.y,baseLandY+(Math.random()*6-3),jit());
+  // 第二顆稍後從下一個孔噴出（錯落細流，而非同時密集）
+  const h1=holes[holeCursor%n];holeCursor++;
+  setTimeout(()=>{if(canActive)emitDrop(layer,h1.x,h1.y,baseLandY+(Math.random()*6-3),jit());},55);
   if(plant&&!plant.dataset.bloom)waterPlant(plant);
 }
 function waterPlant(p){
@@ -1286,7 +1295,7 @@ function bindCan(stage){
     canActive=true;can.classList.add('lifted');
     const pr=e.touches?e.touches[0]:e,cr=can.getBoundingClientRect();
     dragOff={dx:pr.clientX-cr.left,dy:pr.clientY-cr.top};
-    if(!dripTimer)dripTimer=setInterval(()=>{if(canActive)spawnStream(stage);},150);
+    if(!dripTimer)dripTimer=setInterval(()=>{if(canActive)spawnStream(stage);},120);
     e.preventDefault();
   };
   const move=e=>{
