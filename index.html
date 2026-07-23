@@ -315,9 +315,9 @@ main.show{opacity:1}
 .can-wrap.lifted{transform:rotate(-22deg);cursor:grabbing}
 .can-wrap svg{display:block;filter:drop-shadow(0 9px 13px rgba(110,140,110,.30))}
 .water-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
-.water-drop{position:absolute;left:0;top:0;width:7px;height:2.2px;border-radius:50%;
-  background:linear-gradient(90deg,rgba(186,214,228,.10),rgba(150,196,221,.92));
-  box-shadow:0 0 3px rgba(150,195,220,.38);
+.water-drop{position:absolute;left:0;top:0;width:9px;height:2.8px;border-radius:50%;
+  background:linear-gradient(90deg,rgba(186,214,228,.12),rgba(150,196,221,.95));
+  box-shadow:0 0 4px rgba(150,195,220,.45);
   offset-rotate:auto;offset-anchor:center;will-change:offset-distance}
 @keyframes flap{from{transform:rotateY(0deg)}to{transform:rotateY(62deg)}}
 @keyframes flit1{0%{transform:translate(0,0)}25%{transform:translate(120px,-30px)}50%{transform:translate(230px,10px)}75%{transform:translate(120px,44px)}100%{transform:translate(0,0)}}
@@ -1269,13 +1269,13 @@ function spawnStream(stage){
   const plant=plantUnder(stage,cx);
   const sr=stage.getBoundingClientRect();
   const baseLandY=plant?(plant.getBoundingClientRect().bottom-sr.top-6):sr.height*0.83;
-  const jit=()=>({dx:(Math.random()*3-1.5),dy:(Math.random()*3-1.5),ang:(Math.random()*0.12-0.06)});
+  const jit=()=>({dx:(Math.random()*5-2.5),dy:(Math.random()*5-2.5),ang:(Math.random()*0.30-0.15)});
   // 輪流：每次只從一個孔噴一顆細碎水滴，並錯開時間，避免全部擠成一顆大水滴
   const h0=holes[holeCursor%n];holeCursor++;
-  emitDrop(layer,h0.x,h0.y,baseLandY+(Math.random()*6-3),jit());
+  emitDrop(layer,h0.x,h0.y,baseLandY+(Math.random()*14-7),jit());
   // 第二顆稍後從下一個孔噴出（錯落細流，而非同時密集）
   const h1=holes[holeCursor%n];holeCursor++;
-  setTimeout(()=>{if(canActive)emitDrop(layer,h1.x,h1.y,baseLandY+(Math.random()*6-3),jit());},55);
+  setTimeout(()=>{if(canActive)emitDrop(layer,h1.x,h1.y,baseLandY+(Math.random()*14-7),jit());},85);
   if(plant&&!plant.dataset.bloom)waterPlant(plant);
 }
 function waterPlant(p){
