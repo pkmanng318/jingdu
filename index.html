@@ -312,7 +312,7 @@ main.show{opacity:1}
 /* 淋花水壺：花園右側，可拖動；提起時向左傾斜，由花灑頭持續滴水 */
 .can-wrap{position:absolute;z-index:5;cursor:grab;touch-action:none;will-change:left,top,transform;
   transform-origin:72% 74%;transition:transform .55s cubic-bezier(.2,.8,.2,1)}
-.can-wrap.lifted{transform:rotate(17deg);cursor:grabbing}
+.can-wrap.lifted{transform:rotate(-22deg);cursor:grabbing}
 .can-wrap svg{display:block;filter:drop-shadow(0 9px 13px rgba(110,140,110,.30))}
 .water-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
 .water-drop{position:absolute;width:6px;height:9px;border-radius:54% 54% 50% 50%/64% 64% 40% 40%;
@@ -1029,21 +1029,40 @@ function grassSVG(leftPct){
     </g></svg>`;
 }
 function wateringCanSVG(){
-  // 水壺：噴嘴（花灑頭）朝左，提起時向左傾斜由噴嘴滴水；canSpout 為不可見的出水點標記
+  // 水壺：花灑頭（含出水孔）朝左；提起時整體逆時針傾斜（見 .can-wrap.lifted 的 rotate(-22deg)），噴嘴向下出水；canSpout 為不可見的出水點標記
   return `<div class="can-wrap" id="canWrap">
     <svg width="150" height="120" viewBox="0 0 170 130">
-      <defs><linearGradient id="canG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe0c6"/><stop offset="1" stop-color="#7fae8c"/></linearGradient></defs>
-      <path d="M74 78 C52 74 30 66 14 56 L10 62 C30 73 54 84 76 90 Z" fill="url(#canG)" stroke="#6f9c7c" stroke-width="1.6"/>
+      <defs>
+        <linearGradient id="canG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#d2edd6"/><stop offset="52%" stop-color="#9bcba6"/><stop offset="100%" stop-color="#6aa57d"/>
+        </linearGradient>
+        <linearGradient id="canShine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity=".6"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- 提把 -->
+      <path d="M86 49 Q115 7 148 49" fill="none" stroke="#5f9b70" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M86 49 Q115 7 148 49" fill="none" stroke="#a9d4b1" stroke-width="2.6" stroke-linecap="round"/>
+      <!-- 噴嘴管 -->
+      <path d="M86 82 C62 78 42 71 28 65 L22 54 C45 60 65 67 88 72 Z" fill="url(#canG)" stroke="#5f9b70" stroke-width="1.6"/>
+      <!-- 花灑頭（含出水孔） -->
       <g>
-        <ellipse cx="12" cy="59" rx="8" ry="10" fill="#a9d2ad" stroke="#6f9c7c" stroke-width="1.6"/>
-        <ellipse cx="12" cy="59" rx="4.5" ry="6.5" fill="#cde8d0"/>
+        <ellipse cx="20" cy="59" rx="9.5" ry="12" fill="#b6e0bc" stroke="#5f9b70" stroke-width="1.7"/>
+        <ellipse cx="20" cy="59" rx="6" ry="8" fill="#8fc79a"/>
+        <g fill="#3f6e52">
+          <circle cx="15.5" cy="54" r="1.3"/><circle cx="20" cy="53" r="1.3"/><circle cx="24.5" cy="55" r="1.3"/>
+          <circle cx="14.5" cy="60" r="1.3"/><circle cx="20" cy="59.5" r="1.4"/><circle cx="25" cy="61" r="1.3"/>
+          <circle cx="16.5" cy="65" r="1.2"/><circle cx="22" cy="65" r="1.2"/>
+        </g>
       </g>
-      <path d="M74 46 Q68 46 68 54 L72 106 Q73 118 88 118 L150 118 Q164 118 164 104 L166 58 Q166 46 152 46 Z" fill="url(#canG)" stroke="#6f9c7c" stroke-width="1.7"/>
-      <ellipse cx="113" cy="46" rx="43" ry="9" fill="#d4ead7" stroke="#6f9c7c" stroke-width="1.5"/>
-      <ellipse cx="113" cy="46" rx="34" ry="6" fill="#aecdb2"/>
-      <path d="M84 42 Q113 4 148 42" fill="none" stroke="#6f9c7c" stroke-width="5.5" stroke-linecap="round"/>
-      <path d="M88 58 Q86 84 94 108" stroke="#ffffff" stroke-opacity=".4" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <circle id="canSpout" cx="12" cy="67" r="2" fill="transparent"/>
+      <!-- 壺身 -->
+      <path d="M80 51 Q76 106 116 112 Q156 106 152 51 Z" fill="url(#canG)" stroke="#5f9b70" stroke-width="1.8"/>
+      <!-- 壺口 -->
+      <ellipse cx="116" cy="50" rx="37" ry="8.5" fill="#d6ecd9" stroke="#5f9b70" stroke-width="1.6"/>
+      <ellipse cx="116" cy="50" rx="29" ry="5.5" fill="#86b88f"/>
+      <!-- 壺身高光 -->
+      <path d="M93 60 Q90 96 116 105 Q104 96 102 60 Z" fill="url(#canShine)"/>
+      <circle id="canSpout" cx="15" cy="59" r="2" fill="transparent"/>
     </svg>
   </div>`;
 }
